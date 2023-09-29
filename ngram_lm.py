@@ -16,7 +16,15 @@ class NgramModel:
   """
   def generate_n_grams(self, data: list[list[str]], n: int, start_token: str = '<s>', end_token='</s>') -> dict:
     # TODO: Implement based on the given description
-    pass
+    self.n_gram_model = {}
+
+    for sentence in data:
+      sentence = [start_token] * (n-1) + sentence + [end_token]
+      for word in range(len(sentence)-n+1):
+        n_gram = tuple(sentence[word:word+n])
+        self.n_gram_model[n_gram] = self.n_gram_model.get(n_gram, 0) + 1
+
+    return self.n_gram_model
   
   """
   - Fungsionalitas method ini menghitung probabilitas suatu kata given kata/kumpulan kata.
@@ -26,7 +34,14 @@ class NgramModel:
   """
   def count_probability(self, predicted_word: str, given_word: list[str], n_gram_counts, n_plus1_gram_counts, vocabulary_size, laplace_number: float = 1.0) -> float:
     # TODO: Implement based on the given description
-    pass
+    n_gram = tuple(given_word + [predicted_word])
+
+    count_n_gram = n_gram_counts.get(n_gram, 0)
+    count_n_plus1_gram = n_plus1_gram_counts.get(tuple(given_word), 0)
+
+    probability = (count_n_gram + laplace_number) / (count_n_plus1_gram + abs(vocabulary_size*laplace_number))
+    
+    return probability
   
   """
   - Silakan Anda menggunakan method ini untuk bermain-main/menguji segala kemungkinan sentence/word generation berdasarkan method count_probability yang telah Anda bangun.
@@ -47,7 +62,24 @@ class NgramModel:
   """
   def count_perplexity(self, sentence, n_gram_counts, n_plus1_gram_counts, vocab_size, start_token='<s>', end_token = '</s>', laplace_number=1.0):
     # TODO: Implement based on the given description
-    pass
+    sentence = [start_token] + sentence + [end_token]
+    m = len(sentence)
+    log_sum = 0.0
+
+    for word in range(m-1):
+      given_word = sentence[word]
+      predicted_word =  sentence[word+1]
+      probability = self.count_probability(predicted_word=predicted_word, 
+                                           given_word=[given_word],
+                                           n_gram_counts=n_gram_counts,
+                                           n_plus1_gram_counts=n_plus1_gram_counts,
+                                           vocabulary_size=vocab_size,
+                                           laplace_number=laplace_number)
+      log_sum += math.log(probability, 2)
+
+    perplexity = -1/m * log_sum
+
+    return perplexity
 
 def main():
   """

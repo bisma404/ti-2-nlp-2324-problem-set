@@ -1,6 +1,6 @@
 import pickle
 import numpy as np
-from aksara import MultiwordTokenizer
+from aksara import MultiwordTokenizer, BaseTokenizer
 
 class Preprocess:
   def __init__(self) -> None:
@@ -39,7 +39,8 @@ class Preprocess:
   """
   def split_sentences(self, data: list[str]) -> list[str]:
     # TODO: Implement based on the given description
-    pass
+    self.splitted_sentences = [sentence.strip() for sentence in data]
+    return self.splitted_sentences
   
   """
   - Fungsionalitas method di bawah ini adalah melakukan tokenisasi pada kalimat.
@@ -51,7 +52,21 @@ class Preprocess:
   """
   def tokenize_sentences(self, data: list[str], lower: bool) -> list[list[str]]:
     # TODO: Implement based on the given description
-    pass
+    import re
+
+    multiword_tokenizer = MultiwordTokenizer()
+    self.tokenized_data = []
+
+    for sentence in data:
+      if not lower:
+        sentence = re.sub(r'[^\x00-\x7F]+', '', sentence)
+      else:
+        sentence = re.sub(r'[^\x00-\x7F]+', '', sentence.lower())
+
+      tokenized_sentence = multiword_tokenizer.tokenize(sentence)
+      self.tokenized_data.append(tokenized_sentence)
+
+    return self.tokenized_data
   
   def get_tokenized_data(self, data: list[str], lower: bool) -> list[list[str]]:
     splitted: list[str] = self.split_sentences(data)
@@ -64,7 +79,13 @@ class Preprocess:
   """
   def word_map(self, data: list[list[str]]) -> dict:
     # TODO: Implement based on the given description
-    pass
+    self.word_count = {}
+
+    for sentence in data:
+      for word in sentence:
+        self.word_count[word] = self.word_count.get(word, 0) + 1
+
+    return self.word_count
   
   """
   - Fungsionalitas pada method di bawah ini adalah melakukan filtering terhadap kata yang kemunculannya di bawah threshold/batasan tertentu.
@@ -75,7 +96,13 @@ class Preprocess:
   """
   def filter_vocab_by_threshold(self, data: list[list[str]], num_threshold: int) -> list[str]:
     # TODO: Implement based on the given description
-    pass
+    word_count = self.word_map(data)
+    self.filtered_vocab = []
+
+    for vocab, count in word_count.items():
+      if count >= num_threshold: self.filtered_vocab.append(vocab)
+
+    return self.filtered_vocab
   
   """
   - Fungsionalitas pada method ini adalah mengganti kata-kata yang kemunculannya di bawah threshold menjadi simbol <unk>.
@@ -85,7 +112,16 @@ class Preprocess:
   """
   def handle_oov_with_unk(self, data: list[list[str]], vocab: list[str], unknown_token='<unk>') -> list[list[str]]:
     # TODO: Implement based on the given description
-    pass
+    self.oov_handled = []
+    
+    for sentence in data:
+      oov_sentence = []
+      for word in sentence:
+        word = unknown_token if word not in vocab else word
+        oov_sentence.append(word)
+      self.oov_handled.append(oov_sentence)
+
+    return self.oov_handled
   
   def preprocess_raw_data(self, train, test, threshold):
     vocab = self.filter_vocab_by_threshold(train, threshold)
@@ -134,14 +170,23 @@ def main():
 
   """
   EXAMPLE:
+  - Pada contoh ini menggunakan skenario lowercasing
+  """
+  # tokenized_train_lower = preprocess.get_tokenized_data(train, lower=True)
+  # tokenized_test_lower = preprocess.get_tokenized_data(test, lower=True)
+
+  """
+  EXAMPLE:
   - Pada contoh ini ditetapkan threshold sebesar 3.
   - Artinya setiap kata yang kemunculannya di bawah 3 akan dihilangkan dari koleksi.
   """
   print('Pre-processing data...')
   vocab, train_handled, test_handled = preprocess.preprocess_raw_data(tokenized_train, tokenized_test, 3)
+  # vocab_lower, train_handled_lower, test_handled_lower = preprocess.preprocess_raw_data(tokenized_train_lower, tokenized_test_lower, 3)
 
   print('Saving data...')
   preprocess.save_to_pickle(vocab, train_handled, test_handled, lowercase)
+  # preprocess.save_to_pickle(vocab_lower, train_handled_lower, test_handled_lower, lower=True)
   print('Finish!')
 
 if __name__ == "__main__":
